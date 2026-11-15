@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سازنده پاورپوینت از تصاویر</title>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 30px;
+  }
+  h1 {
+    text-align: center;
+    color: #4a3f8f;
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #888;
+    margin-bottom: 25px;
+    font-size: 14px;
+  }
+  .drop-zone {
+    border: 3px dashed #667eea;
+    border-radius: 16px;
+    padding: 50px 20px;
+    text-align: center;
+    background: #f8f9ff;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 25px;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    background: #eef1ff;
+    border-color: #4a3f8f;
+    transform: scale(1.01);
+  }
+  .drop-zone-icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+  }
+  .drop-zone-text {
+    font-size: 18px;
+    color: #4a3f8f;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  .drop-zone-hint {
+    font-size: 13px;
+    color: #888;
+  }
+  .images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 18px;
+    margin-bottom: 25px;
+    min-height: 50px;
+  }
+  .image-card {
+    position: relative;
+    background: #f8f9ff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    cursor: grab;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    aspect-ratio: 4/3;
+  }
+  .image-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border-color: #667eea;
+  }
+  .image-card.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+  .image-card.drag-over {
+    border-color: #4a3f8f;
+    background: #eef1ff;
+  }
+  .image-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+  .image-number {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+    z-index: 2;
+  }
+  .delete-btn {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+    font-weight: bold;
+  }
+  .image-card:hover .delete-btn { opacity: 1; }
+  .delete-btn:hover { background: #c0392b; }
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding-top: 15px;
+    border-top: 2px solid #eef1ff;
+  }
+  .btn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102,126,234,0.6);
+  }
+  .btn-secondary {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(17,153,142,0.4);
+  }
+  .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(17,153,142,0.6);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+  .empty-hint {
+    text-align: center;
+    color: #aaa;
+    padding: 30px;
+    font-size: 15px;
+    grid-column: 1 / -1;
+  }
+  .counter {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #4a3f8f;
+    font-weight: bold;
+    font-size: 15px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #333;
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: transform 0.3s;
+    z-index: 1000;
+    font-family: inherit;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎨 سازنده پاورپوینت از تصاویر</h1>
+  <p class="subtitle">تصاویر پوسترها را درگ کنید یا کلیک کنید — ترتیب و شماره‌گذاری خودکار انجام می‌شود</p>
+
+  <div class="drop-zone" id="dropZone">
+    <div class="drop-zone-icon">📤</div>
+    <div class="drop-zone-text">تصاویر را اینجا رها کنید</div>
+    <div class="drop-zone-hint">یا کلیک کنید — پشتیبانی از چند تصویر همزمان</div>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" multiple hidden>
+
+  <div class="counter" id="counter" style="display:none;"></div>
+
+  <div class="images-grid" id="imagesGrid">
+    <div class="empty-hint">هنوز تصویری اضافه نشده است</div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="btnHtml" disabled>
+      🌐 دانلود HTML پاورپوینت
+    </button>
+    <button class="btn btn-secondary" id="btnPptx" disabled>
+      📊 دانلود پاورپوینت
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const state = {
+  images: [], // { id, dataUrl, name }
+  nextId: 1
+};
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const imagesGrid = document.getElementById('imagesGrid');
+const counter = document.getElementById('counter');
+const btnHtml = document.getElementById('btnHtml');
+const btnPptx = document.getElementById('btnPptx');
+const toast = document.getElementById('toast');
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function updateUI() {
+  imagesGrid.innerHTML = '';
+
+  if (state.images.length === 0) {
+    imagesGrid.innerHTML = '<div class="empty-hint">هنوز تصویری اضافه نشده است</div>';
+    counter.style.display = 'none';
+    btnHtml.disabled = true;
+    btnPptx.disabled = true;
+    return;
+  }
+
+  counter.style.display = 'block';
+  counter.textContent = `📸 ${state.images.length} تصویر — ترتیب فعلی = ترتیب اسلایدها`;
+  btnHtml.disabled = false;
+  btnPptx.disabled = false;
+
+  state.images.forEach((img, index) => {
+    const card = document.createElement('div');
+    card.className = 'image-card';
+    card.draggable = true;
+    card.dataset.id = img.id;
+
+    card.innerHTML = `
+      <span class="image-number">${index + 1}</span>
+      <button class="delete-btn" title="حذف">×</button>
+      <img src="${img.dataUrl}" alt="${img.name}">
+    `;
+
+    card.querySelector('.delete-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.images = state.images.filter(i => i.id !== img.id);
+      updateUI();
+      showToast('تصویر حذف شد');
+    });
+
+    card.addEventListener('dragstart', handleDragStart);
+    card.addEventListener('dragend', handleDragEnd);
+    card.addEventListener('dragover', handleDragOver);
+    card.addEventListener('dragleave', handleDragLeave);
+    card.addEventListener('drop', handleDrop);
+
+    imagesGrid.appendChild(card);
+  });
+}
+
+let draggedId = null;
+
+function handleDragStart(e) {
+  draggedId = this.dataset.id;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragEnd(e) {
+  this.classList.remove('dragging');
+  document.querySelectorAll('.image-card').forEach(c => c.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  if (this.dataset.id === draggedId) return;
+  this.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  const targetId = this.dataset.id;
+  if (draggedId === targetId) return;
+
+  const fromIndex = state.images.findIndex(i => String(i.id) === String(draggedId));
+  const toIndex = state.images.findIndex(i => String(i.id) === String(targetId));
+  if (fromIndex === -1 || toIndex === -1) return;
+
+  const [moved] = state.images.splice(fromIndex, 1);
+  state.images.splice(toIndex, 0, moved);
+  updateUI();
+}
+
+function readFiles(files) {
+  const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (imageFiles.length === 0) {
+    showToast('فقط فایل تصویری مجاز است');
+    return;
+  }
+
+  let loaded = 0;
+  const total = imageFiles.length;
+
+  imageFiles.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      state.images.push({
+        id: state.nextId++,
+        dataUrl: e.target.result,
+        name: file.name
+      });
+      loaded++;
+      if (loaded === total) {
+        updateUI();
+        showToast(`${total} تصویر اضافه شد`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Drag & drop zone
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  readFiles(e.dataTransfer.files);
+});
+
+fileInput.addEventListener('change', (e) => {
+  readFiles(e.target.files);
+  fileInput.value = '';
+});
+
+// ============ EXPORT PPTX ============
+btnPptx.addEventListener('click', async () => {
+  if (state.images.length === 0) return;
+  showToast('در حال ساخت فایل پاورپوینت...');
+
+  try {
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_16x9'; // 10 x 5.625 inches
+    pptx.author = 'Generated';
+    pptx.title = 'گرما و ماده';
+
+    // Cover slide
+    const cover = pptx.addSlide();
+    cover.background = { color: '4A3F8F' };
+    cover.addText('درس پنجم: گرما و ماده', {
+      x: 0.5, y: 1.8, w: 9, h: 1.2,
+      fontSize: 44, bold: true, color: 'FFFFFF',
+      align: 'center', fontFace: 'Tahoma', rtlMode: true
+    });
+    cover.addText('علوم تجربی — پایه چهارم دبستان', {
+      x: 0.5, y: 3.2, w: 9, h: 0.7,
+      fontSize: 22, color: 'FFD166',
+      align: 'center', fontFace: 'Tahoma', rtlMode: true
+    });
+
+    // Image slides
+    for (let i = 0; i < state.images.length; i++) {
+      const img = state.images[i];
+      const slide = pptx.addSlide();
+      slide.background = { color: 'FFFFFF' };
+
+      // Image with contain sizing
+      slide.addImage({
+        data: img.dataUrl,
+        x: 0.3, y: 0.3, w: 9.4, h: 4.7,
+        sizing: { type: 'contain', w: 9.4, h: 4.7 }
+      });
+
+      // Number badge
+      slide.addShape(pptx.ShapeType.ellipse, {
+        x: 9.2, y: 0.1, w: 0.6, h: 0.6,
+        fill: { color: '667EEA' },
+        line: { color: 'FFFFFF', width: 2 }
+      });
+      slide.addText(String(i + 1), {
+        x: 9.2, y: 0.1, w: 0.6, h: 0.6,
+        fontSize: 18, bold: true, color: 'FFFFFF',
+        align: 'center', valign: 'middle'
+      });
+
+      // Slide number bottom
+      slide.addText(`${i + 1} / ${state.images.length}`, {
+        x: 4, y: 5.15, w: 2, h: 0.35,
+        fontSize: 12, color: '999999',
+        align: 'center', fontFace: 'Tahoma'
+      });
+    }
+
+    await pptx.writeFile({ fileName: 'garma-va-made.pptx' });
+    showToast('✅ فایل پاورپوینت دانلود شد');
+  } catch (err) {
+    console.error(err);
+    showToast('خطا در ساخت پاورپوینت');
+  }
+});
+
+// ============ EXPORT HTML ============
+btnHtml.addEventListener('click', () => {
+  if (state.images.length === 0) return;
+  showToast('در حال ساخت فایل HTML...');
+
+  const slidesData = JSON.stringify(state.images.map(i => i.dataUrl));
+
+  const htmlContent = `<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>گرما و ماده — پاورپوینت HTML</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Tahoma, sans-serif;
+    background: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .slide-container {
+    position: relative;
+    width: 90vw;
+    max-width: 1200px;
+    aspect-ratio: 16/9;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .slide-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .number-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 22px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10;
+  }
+  .controls {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0,0,0,0.6);
+    padding: 12px 22px;
+    border-radius: 40px;
+    backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+  .controls button {
+    background: #667eea;
+    color: #fff;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .controls button:hover {
+    background: #764ba2;
+    transform: scale(1.1);
+  }
+  .controls button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .counter-display {
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    min-width: 70px;
+    text-align: center;
+  }
+  .fullscreen-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+  .fullscreen-btn:hover { background: rgba(0,0,0,0.8); }
+</style>
+</head>
+<body>
+
+<button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ تمام‌صفحه</button>
+
+<div class="slide-container">
+  <div class="number-badge" id="badge">1</div>
+  <img id="slideImg" src="" alt="slide">
+</div>
+
+<div class="controls">
+  <button id="prevBtn" onclick="prevSlide()">▶</button>
+  <span class="counter-display" id="counterDisplay">1 / 1</span>
+  <button id="nextBtn" onclick="nextSlide()">◀</button>
+</div>
+
+<script>
+const slides = ${slidesData};
+let current = 0;
+
+const img = document.getElementById('slideImg');
+const badge = document.getElementById('badge');
+const counterDisplay = document.getElementById('counterDisplay');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function render() {
+  img.src = slides[current];
+  badge.textContent = current + 1;
+  counterDisplay.textContent = (current + 1) + ' / ' + slides.length;
+  prevBtn.disabled = current === 0;
+  nextBtn.disabled = current === slides.length - 1;
+}
+
+function nextSlide() {
+  if (current < slides.length - 1) { current++; render(); }
+}
+function prevSlide() {
+  if (current > 0) { current--; render(); }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowDown' || e.key === ' ') {
+    e.preventDefault(); nextSlide();
+  }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+    e.preventDefault(); prevSlide();
+  }
+});
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+render();
+<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'garma-va-made-slides.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ فایل HTML دانلود شد');
+});
+</script>
+</body>
+</html>
